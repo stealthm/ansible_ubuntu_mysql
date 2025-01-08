@@ -1,0 +1,13 @@
+---
+dependency:
+  name: 'galaxy'
+  enabled: true
+driver:
+  name: 'vagrant'
+platforms:
+  - name: 'vagrant-ubuntu24'
+    box: 'gusztavvargadr/ubuntu-server-2404-lts'
+provisioner:
+  name: 'ansible'
+verifier:
+  name: 'ansible'

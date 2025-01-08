@@ -1,0 +1,8 @@
+---
+- name: Converge
+  hosts: all
+  roles:
+#    - role: stealthm.ansible_ubuntu_init
+#      vars:
+#        update_all_packages: false
+    - role: stealthm.ansible_ubuntu_mysql

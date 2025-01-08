@@ -1,0 +1,39 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  vars_files:
+    - ../../defaults/main.yml
+
+  tasks:
+    - name: Ubuntu_MySQL | Verify MySQL service status
+      ansible.builtin.systemd:
+        name: "{{ mysql_package }}.service"
+      register: mysql_status
+
+    - name: Ubuntu_MySQL | Check if MySQL service is active
+      ansible.builtin.assert:
+        that:
+          - mysql_status.status.ActiveState == "active"
+        success_msg: "{{ mysql_package }} service is running and active."
+        fail_msg: "{{ mysql_package }} service status is {{ mysql_status.status.ActiveState }}"
+
+    - name: Ubuntu_MySQL | Make sure we can connect to MySQL via Unix socket.
+      ansible.builtin.command: "mysql -uroot -p{{ mysql_root_password }} -NBe 'show databases;'"
+      register: mysql_output
+      changed_when: false
+      when: mysql_change_root_password
+
+    - name: Ubuntu_MySQL | Show current databases
+      ansible.builtin.debug:
+        var: mysql_output.stdout_lines
+      when: mysql_change_root_password
+
+    - name: Ubuntu_MySQL | Check MySQL version
+      ansible.builtin.command: "mysql --version"
+      register: mysql_version
+      changed_when: false
+
+    - name: Ubuntu_MySQL | Show MySQL version
+      ansible.builtin.debug:
+        var: mysql_version.stdout
