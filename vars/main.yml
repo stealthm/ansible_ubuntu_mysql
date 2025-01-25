@@ -1,0 +1,17 @@
+---
+
+# mysql config
+mariadb_conf: "/etc/mysql/mariadb.conf.d/50-server.cnf"
+mysql_conf: "/etc/mysql/mysql.conf.d/mysqld.cnf"
+
+# mysql log dir
+mysql_log_dir: /var/log/mysql
+
+# mysql error log
+mysql_error_log: "{{ mysql_log_dir }}/error.log"
+
+# mysql slow query log
+mysql_slow_log: "{{ mysql_log_dir }}/{{ mysql_package }}-slow.log"
+
+# mysql slow query time
+mysql_slow_time: 5

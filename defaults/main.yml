@@ -3,6 +3,9 @@
 mysql_package: mariadb
 # mysql_package: mysql
 
+# Mysql character set
+mysql_character_set: utf8mb4
+
 # Change root password
 mysql_change_root_password: false
 

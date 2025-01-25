@@ -2,15 +2,16 @@
 - name: Ubuntu_MySQL | Install {{ mysql_package }}
   ansible.builtin.apt:
     pkg:
-      - '{{ mysql_package }}-server'
+      - "{{ mysql_package }}-server"
       - python3-pymysql
+      - percona-toolkit
     state: latest
     update_cache: true
     cache_valid_time: 3600
 
 - name: Ubuntu_MySQL | Enable & start {{ mysql_package }}
   ansible.builtin.systemd_service:
-    name: '{{ mysql_package }}.service'
+    name: "{{ mysql_package }}.service"
     enabled: true
     state: started
 
@@ -71,3 +72,97 @@
     host: "{{ item }}"
     state: absent
   with_items: "{{ mysql_anonymous_hosts.stdout_lines | default([]) }}"
+
+- name: Ubuntu_MySQL | Set mysqld vars
+  ansible.builtin.set_fact:
+    mysqld_conf: "{{ mariadb_conf }}"
+    slow_log: "log_slow_query_file"
+    slow_time: "log_slow_query_time"
+  when: mysql_package == "mariadb"
+
+- name: Ubuntu_MySQL | Set mysqld vars
+  ansible.builtin.set_fact:
+    mysqld_conf: "{{ mysql_conf }}"
+    slow_log: "slow_query_log_file"
+    slow_time: "long_query_time"
+  when: mysql_package == "mysql"
+
+- name: Ubuntu_MySQL | Set ini error log
+  community.general.ini_file:
+    path: "{{ mysqld_conf }}"
+    section: mysqld
+    option: log_error
+    value: /var/log/mysql/error.log
+    mode: '0644'
+    backup: true
+
+- name: Ubuntu_MySQL | Set ini slow query log
+  community.general.ini_file:
+    path: "{{ mysqld_conf }}"
+    section: mysqld
+    option: "{{ slow_log }}"
+    value: "{{ mysql_slow_log }}"
+    mode: '0644'
+
+- name: Ubuntu_MySQL | Set ini slow query time
+  community.general.ini_file:
+    path: "{{ mysqld_conf }}"
+    section: mysqld
+    option: "{{ slow_time }}"
+    value: "{{ mysql_slow_time }}"
+    mode: '0644'
+
+- name: Ubuntu_MySQL | Set ini slow query enable
+  community.general.ini_file:
+    path: "{{ mysqld_conf }}"
+    section: mysqld
+    option: slow_query_log
+    value: 1
+    mode: '0644'
+  when: mysql_package == "mysql"
+
+- name: Ubuntu_MySQL | Set ini character set
+  community.general.ini_file:
+    path: "{{ mysqld_conf }}"
+    section: mysqld
+    option: character-set-server
+    value: "{{ mysql_character_set }}"
+    mode: '0644'
+
+- name: Ubuntu_MySQL | Set ini collation-server
+  community.general.ini_file:
+    path: "{{ mysqld_conf }}"
+    section: mysqld
+    option: collation-server
+    value: "{{ mysql_character_set }}_general_ci"
+    mode: '0644'
+
+- name: Ubuntu_MySQL | Set log dir
+  ansible.builtin.file:
+    path: "{{ mysql_log_dir }}"
+    state: directory
+    mode: '0755'
+    owner: mysql
+    group: mysql
+
+- name: Ubuntu_MySQL | Set error log file
+  ansible.builtin.file:
+    path: "{{ mysql_error_log }}"
+    state: touch
+    mode: '0644'
+    owner: mysql
+    group: mysql
+
+- name: Ubuntu_MySQL | Set slow log file
+  ansible.builtin.file:
+    path: "{{ mysql_slow_log }}"
+    state: touch
+    mode: '0644'
+    owner: mysql
+    group: mysql
+
+- name: Ubuntu_MySQL | restart {{ mysql_package }}
+  ansible.builtin.systemd_service:
+    name: "{{ mysql_package }}.service"
+    enabled: true
+    state: restarted
